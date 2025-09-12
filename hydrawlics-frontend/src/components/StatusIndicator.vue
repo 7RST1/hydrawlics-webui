@@ -43,7 +43,7 @@ defineExpose({
   </div>
 
   <div class="flex flex-row dots" :class="{'error-dots': connectionStatus == 'local'}">
-    <span v-for="i in 3" :style="{animationDelay: i/5+1+'s'}">
+    <span v-for="i in 3" :style="{animationDelay: i/5+0.2+'s'}">
       <span v-if="i == 2 && connectionStatus == 'local'" class="error-x">+</span>
       <template v-else>·</template>
     </span>
