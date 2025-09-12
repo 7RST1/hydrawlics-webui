@@ -4,6 +4,7 @@ import axios from "axios";
 import {onMounted, ref} from "vue";
 import LoadingDots from "../components/LoadingDots.vue";
 import type {FileStatus} from "../models/server-objects.ts";
+import StatusIndicator from "../components/StatusIndicator.vue";
 
 const input = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -139,6 +140,9 @@ onMounted(()=> {
         {{ letter.char }}
       </span>
     </h1>
+    <div>
+      <status-indicator/>
+    </div>
   </div>
 
   <div class="main-visualizer flex-1 flex flex-column items-center ">
