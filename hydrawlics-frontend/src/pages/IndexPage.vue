@@ -1,10 +1,12 @@
 <script setup lang="ts">
 
 import axios from "axios";
-import {onMounted, ref} from "vue";
+import {SERVER_URL} from "../constants.ts";
+import {onMounted, ref, computed} from "vue";
 import LoadingDots from "../components/LoadingDots.vue";
 import type {FileStatus} from "../models/server-objects.ts";
 import StatusIndicator from "../components/StatusIndicator.vue";
+import type {ConnectionLevel} from "../components/StatusIndicator.vue";
 
 const input = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -14,12 +16,17 @@ const selectorWidth = ref<string>(DEFAULT_selectorWidth);
 const isDarkTheme = ref<boolean>(false);
 const isUploading = ref(false);
 
-const SERVER_URL = "http://localhost:5000";
-
 const jobId = ref<string | null>(null);
 
 const sitestage = ref<'not-uploaded' | 'uploading' | 'processing' | 'done'>('not-uploaded');
 const fileState = ref<FileStatus | null>(null);
+
+// Status indicator ref
+const statusRef = ref<InstanceType<typeof StatusIndicator>>();
+
+const connectionStatus = computed<ConnectionLevel | undefined>(() => {
+  return statusRef.value?.connectionStatus ?? undefined;
+});
 
 // Title animation
 const title = 'Hydrawlics';
@@ -141,7 +148,7 @@ onMounted(()=> {
       </span>
     </h1>
     <div>
-      <status-indicator/>
+      <status-indicator ref="statusRef"/>
     </div>
   </div>
 
@@ -159,7 +166,7 @@ onMounted(()=> {
 
 
     <!-- idle image -->
-    <img v-else :src="isDarkTheme ? '/scribble-hydrawlics-dark.svg' : '/scribble-hydrawlics-light.svg'" alt="Hydrawlics logo" class="scribble-svg">
+    <img v-else :src="isDarkTheme ? '/scribble-hydrawlics-dark.svg' : '/scribble-hydrawlics-light.svg'" alt="Hydrawlics logo" class="scribble-svg" :class="{disconnected: connectionStatus == 'local'}">
   </div>
 
   <div class="main-container container mb-6">
@@ -265,6 +272,12 @@ button {
   color: var(--md-sys-color-primary);
   opacity: 0.6;
   height: 12rem;
+  transition: filter 0.3s ease-in-out;
+  filter: blur(5px);
+
+  &:not(.disconnected) {
+    filter: initial;
+  }
 }
 
 @keyframes img-appear {
