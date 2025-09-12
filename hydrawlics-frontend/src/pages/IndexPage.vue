@@ -166,7 +166,7 @@ onMounted(()=> {
 
 
     <!-- idle image -->
-    <img v-else :src="isDarkTheme ? '/scribble-hydrawlics-dark.svg' : '/scribble-hydrawlics-light.svg'" alt="Hydrawlics logo" class="scribble-svg" :class="{disconnected: connectionStatus == 'local'}">
+    <img v-else :src="isDarkTheme ? '/scribble-hydrawlics-dark.svg' : '/scribble-hydrawlics-light.svg'" alt="Hydrawlics logo" class="scribble-svg" :class="{disconnected: connectionStatus == 'local' || connectionStatus == undefined}">
   </div>
 
   <div class="main-container container mb-6">
@@ -273,7 +273,7 @@ button {
   opacity: 0.6;
   height: 12rem;
   transition: filter 0.3s ease-in-out;
-  filter: blur(5px);
+  filter: brightness(0%);
 
   &:not(.disconnected) {
     filter: initial;
