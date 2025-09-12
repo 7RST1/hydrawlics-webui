@@ -1,6 +1,7 @@
 import os
 import uuid
 import threading
+from CannyEdge import Canny_detector
 from datetime import datetime
 from time import sleep
 
@@ -37,13 +38,24 @@ def apply_edge_detection(input_path, output_path, job_id):
         # do some arbitrary waiting to simulate processing
         jobs[job_id]['status'] = 'processing'
         jobs[job_id]['progress'] = 10
-        sleep(2)
+        sleep(1)
+
+        import cv2
+
+        img = cv2.imread(input_path)
+        if img is None:
+            raise Exception("Could not read the image file.")
         
         jobs[job_id]['progress'] = 30
         sleep(1)
 
+        edges = Canny_detector(img)
+
         jobs[job_id]['progress'] = 50
-        sleep(2)
+        sleep(1)
+
+        cv2.imwrite(output_path, edges) 
+
         jobs[job_id]['progress'] = 80
         sleep(1)
         jobs[job_id]['progress'] = 100
