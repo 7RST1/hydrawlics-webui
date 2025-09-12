@@ -128,7 +128,7 @@ onMounted(()=> {
 </script>
 
 <template>
-  <div class="p-3 row items-center container">
+  <div class="p-3 flex row items-center container justify-between">
     <h1 style="color: var(--md-sys-color-primary)">
       <span 
         v-for="(letter, index) in animatedLetters" 
@@ -143,7 +143,7 @@ onMounted(()=> {
 
   <div class="main-visualizer flex-1 flex flex-column items-center ">
     <!-- Processing -->
-    <div v-if="sitestage == 'processing'" class="flex flex-row items-center">
+    <div v-if="sitestage == 'processing'" class="flex flex-row items-center" style="color: var(--md-sys-color-on-background)">
       <div style="font-family: monospace; font-size: 1.4rem">processing {{fileState?.progress ?? 0}}%</div>
       <loading-dots style="font-size: 2rem" class="ml-2"/>
     </div>
@@ -162,11 +162,11 @@ onMounted(()=> {
     <div class="flex flex-row mt-4 p-5 rounded-4xl" style="background-color: var(--md-sys-color-surface-container)">
 
       <div class="flex flex-col flex-1">
-        <h2 class="text-xl flex-1">Last opp et bilde</h2>
+        <h2 class="text-xl flex-1" style="color: var(--md-sys-color-on-surface)">Last opp et bilde</h2>
 
         <div v-if="selectedFile" class="flex flex-row">
           <button @click="upload" class="w-min text-nowrap mr-3">Last opp</button>
-          <button @click="cancel" class="w-min secondary">Avbryt</button>
+          <button @click="cancel" class="w-min secondary" style="color: var(--md-sys-color-on-surface)">Avbryt</button>
         </div>
       </div>
 

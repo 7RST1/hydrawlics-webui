@@ -3,13 +3,7 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 
-image_path = 'C:\\Users\\emory\\Pictures\\Smarte systemer\\cat.jpg'
-
-img = cv2.imread(image_path)
-
-img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+# Remove hardcoded image loading from module level
 
 def Canny_detector(img):
     img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

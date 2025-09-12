@@ -42,6 +42,7 @@ h1 {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
 }
 
 @media (prefers-color-scheme: light) {
