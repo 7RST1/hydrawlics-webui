@@ -27,7 +27,7 @@ os.makedirs(app.config['PROCESSED_FOLDER'], exist_ok=True)
 jobs = {}
 
 # Allowed file extensions
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
+ALLOWED_EXTENSIONS = {'png', 'jpg'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -73,6 +73,13 @@ def apply_edge_detection(input_path, output_path, job_id):
 @app.route('/ping', methods=['GET'])
 def ping_pong():
     return jsonify('pong!')
+
+# sanity check route
+@app.route('/config', methods=['GET'])
+def provide_config():
+    return jsonify({
+        'allowed_extensions': list(ALLOWED_EXTENSIONS),
+    })
 
 @app.route('/upload', methods=['POST'])
 def handle_upload():
