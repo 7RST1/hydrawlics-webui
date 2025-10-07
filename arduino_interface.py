@@ -38,8 +38,8 @@ def checksum(string: str | bytes):
     return csum
 
 class ArduinoInterface:
-    def __init__(self):
-        self.ser = serial.Serial('/dev/ttyACM0', BAUD_RATE, dsrdtr=False, rtscts=False, timeout=2)
+    def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = BAUD_RATE, timeout: float = 2):
+        self.ser = serial.Serial(port, baudrate, dsrdtr=False, rtscts=False, timeout=timeout)
 
         sleep(2)
 
