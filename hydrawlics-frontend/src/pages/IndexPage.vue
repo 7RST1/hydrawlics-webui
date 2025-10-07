@@ -2,11 +2,12 @@
 
 import axios from "axios";
 import {SERVER_URL} from "../constants.ts";
-import {onMounted, ref, computed} from "vue";
+import {onMounted, ref, computed, watch} from "vue";
 import LoadingDots from "../components/LoadingDots.vue";
 import type {FileStatus} from "../models/server-objects.ts";
 import StatusIndicator from "../components/StatusIndicator.vue";
 import type {ConnectionLevel} from "../components/StatusIndicator.vue";
+import {getConfig, type HConfig} from "../api.ts";
 
 const input = ref<HTMLInputElement | null>(null);
 const selectedFile = ref<File | null>(null);
@@ -20,6 +21,8 @@ const jobId = ref<string | null>(null);
 
 const sitestage = ref<'not-uploaded' | 'uploading' | 'processing' | 'done'>('not-uploaded');
 const fileState = ref<FileStatus | null>(null);
+
+const hConfig = ref<HConfig | null>(null);
 
 // Status indicator ref
 const statusRef = ref<InstanceType<typeof StatusIndicator>>();
@@ -133,6 +136,12 @@ onMounted(()=> {
   });
 })
 
+watch(connectionStatus, async (newStatus) => {
+  if (newStatus == 'server' || newStatus == 'robot') {
+    hConfig.value = await getConfig();
+  }
+})
+
 </script>
 
 <template>
@@ -194,7 +203,7 @@ onMounted(()=> {
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640H447l-80-80H160v480l96-320h684L837-217q-8 26-29.5 41.5T760-160H160Zm84-80h516l72-240H316l-72 240Zm0 0 72-240-72 240Zm-84-400v-80 80Z"/></svg>
       </div>
     </div>
-    <input ref="input" name="image_uploads" id="image_uploads" type="file" style="display: none"/>
+    <input ref="input" name="image_uploads" id="image_uploads" type="file" style="display: none" :accept="hConfig?.allowed_extensions.map(ext => '.' + ext).join(', ') ?? ''"/>
   </div>
 </template>
 
@@ -222,6 +231,7 @@ button {
   font-weight: 500;
   font-family: inherit;
   background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
   cursor: pointer;
   transition: background-color 0.10s;
 
