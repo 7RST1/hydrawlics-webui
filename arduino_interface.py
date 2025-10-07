@@ -82,9 +82,12 @@ class ArduinoInterface:
             if line.decode('utf-8').strip().startswith("OK"):
                 break
         linestr = line.decode('utf-8').strip()
-        rec_checksum_str = linestr.split(" ")[-1]
-        if rec_checksum_str is not "":
-            rec_checksum = int(rec_checksum_str)
+        parts = linestr.split(" ")
+        if len(parts) > 1:
+            try:
+                rec_checksum = int(parts[-1])
+            except ValueError:
+                rec_checksum = -1
         else:
             rec_checksum = -1
         print(str(local_checksum) + " == " + str(rec_checksum), end=": ")
