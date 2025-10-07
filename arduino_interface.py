@@ -55,13 +55,12 @@ class ArduinoInterface:
         # we should opt for minimal transfer to the arduino. max gcode command lines is about 300,
         # so we should consider a buffer of 128 or something like that. If the arduino sends ACK when
         # some lines have been processed, we can send 64 new ones or something.
-        if len(gcode) > 4000:
-            print(ORANGE + "Warning: " + RESET + "G-code is approaching arduino memory limit!", str(len(gcode)) + "/8192 (but realistically lower than that)")
-            print("\tReduce length if you encounter checksum mismatch")
-
         gcode_trimmed = gcode.strip()
         gcode_bytes = gcode_trimmed.encode('utf-8')
 
+        if len(gcode_bytes) > 4000:
+            print(ORANGE + "Warning: " + RESET + "G-code is approaching arduino memory limit!", str(len(gcode_bytes)) + "/8192 (but realistically lower than that)")
+            print("\tReduce length if you encounter checksum mismatch")
         local_checksum = checksum(gcode_bytes)
         print(f"Sending {len(gcode_bytes)} bytes")
         print(f"First 50 bytes: {gcode_bytes[:50]}")
