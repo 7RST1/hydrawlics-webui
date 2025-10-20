@@ -1,5 +1,7 @@
 import serial
 from time import sleep
+import glob
+import argparse
 
 from serial.serialutil import SerialException
 
@@ -8,34 +10,20 @@ BAUD_RATE = 115200
 ORANGE = '\033[38;5;208m'
 RESET = '\033[0m'
 
-# Sample G-code for drawing a smile (pen down when Z=0, pen up when Z>0)
-SMILE_GCODE = """G0 Z1
-G0 X30 Y50
-G0 Z0
-G1 X35 Y45
-G1 X40 Y42
-G1 X45 Y40
-G1 X50 Y40
-G1 X55 Y40
-G1 X60 Y42
-G1 X65 Y45
-G1 X70 Y50
-G0 Z1
-G0 X45 Y60
-G0 Z0
-G1 X45 Y65
-G0 Z1
-G0 X55 Y60
-G0 Z0
-G1 X55 Y65
-G0 Z1
-"""
-
 def checksum(string: str | bytes):
     csum = 0
     for c in string:
         csum ^= c
     return csum
+
+def find_gcode_file():
+    gcode_files = glob.glob("*.gcode")
+
+    if not gcode_files:
+        print("No G-code files found in current directory.")
+        exit()
+
+    return gcode_files
 
 class ArduinoInterface:
     def __init__(self, port: str = '/dev/ttyACM0', baudrate: int = BAUD_RATE, timeout: float = 2):
@@ -94,6 +82,31 @@ class ArduinoInterface:
             print("Checksum mismatch!")
         else:
             print("Checksum OK")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Send G-code files to Arduino over serial")
+    parser.add_argument("--port", type=str, default="/dev/ttyACM0",
+                        help="Serial port to connect to (e.g., /dev/ttyACM0 or COM3)")
+    parser.add_argument("--gcode_file", type=str, default=find_gcode_file()[0],
+                        help="Path to the G-code file to send")
+    args = parser.parse_args()
+
+    try:
+        arduino = ArduinoInterface(port=args.port)
+
+        with open(args.gcode_file, 'r') as f:
+            lines = [line.strip() for line in f if line.strip() and not line.startswith(';')]
+
+        for line in lines:
+            arduino.send_gcode(line)
+            sleep(0.1)  # Small delay between commands to avoid overwhelming the Arduino
+
+        print("G-code file sent successfully.")
+    
+    except SerialException as e:
+        print(f"Error: {e}")
+    except FileNotFoundError:
+        print(f"G-code file '{args.gcode_file}' not found.")
 
 #con = ArduinoInterface()
 
