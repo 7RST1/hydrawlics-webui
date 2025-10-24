@@ -2,6 +2,7 @@ import os
 import uuid
 import threading
 from CannyEdge import Canny_detector
+from polygonOutline import draw_polygon_outlines
 from datetime import datetime
 from time import sleep
 
@@ -50,12 +51,14 @@ def apply_edge_detection(input_path, output_path, job_id):
         sleep(1)
 
         edges = Canny_detector(img)
+        contours, _ = cv2.findContours(edges.astype('uint8'), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         jobs[job_id]['progress'] = 50
         sleep(1)
-
-        cv2.imwrite(output_path, edges) 
-
+        
+        result = draw_polygon_outlines(img, contours)
+        cv2.imwrite(output_path, result)
+       
         jobs[job_id]['progress'] = 80
         sleep(1)
         jobs[job_id]['progress'] = 100
