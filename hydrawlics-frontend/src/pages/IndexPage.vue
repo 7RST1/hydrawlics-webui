@@ -15,7 +15,7 @@ const DEFAULT_selectorWidth = '12rem';
 const selectorWidth = ref<string>(DEFAULT_selectorWidth);
 const isDarkTheme = ref<boolean>(false);
 const isUploading = ref(false);
-const detailLevel = ref<number>(5); // Detail level from 1 (less detail) to 10 (more detail)
+const detailLevel = ref<number>(50); // Detail level from 1 (less detail) to 100 (more detail)
 
 const jobId = ref<string | null>(null);
 
