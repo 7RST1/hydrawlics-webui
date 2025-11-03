@@ -15,6 +15,7 @@ const DEFAULT_selectorWidth = '12rem';
 const selectorWidth = ref<string>(DEFAULT_selectorWidth);
 const isDarkTheme = ref<boolean>(false);
 const isUploading = ref(false);
+const detailLevel = ref<number>(5); // Detail level from 1 (less detail) to 10 (more detail)
 
 const jobId = ref<string | null>(null);
 
@@ -75,12 +76,13 @@ const cancel = () => {
 
 const upload = async () => {
   if (!selectedFile.value) return;
-  
+
   isUploading.value = true;
-  
+
   const formData = new FormData();
   formData.append('file', selectedFile.value);
-  
+  formData.append('slider', detailLevel.value.toString());
+
   try {
     const response = await axios.post( SERVER_URL + '/upload', formData, {
       headers: {
@@ -173,11 +175,29 @@ onMounted(()=> {
     <div class="flex flex-row mt-4 p-5 rounded-4xl" style="background-color: var(--md-sys-color-surface-container)">
 
       <div class="flex flex-col flex-1">
-        <h2 class="text-xl flex-1" style="color: var(--md-sys-color-on-surface)">Last opp et bilde</h2>
+        <h2 class="text-xl flex-1" style="color: var(--md-sys-color-on-surface)">
+          {{ selectedFile ? 'Innstillinger' : 'Last opp et bilde' }}
+        </h2>
 
-        <div v-if="selectedFile" class="flex flex-row">
-          <button @click="upload" class="w-min text-nowrap mr-3">Last opp</button>
-          <button @click="cancel" class="w-min secondary" style="color: var(--md-sys-color-on-surface)">Avbryt</button>
+        <div v-if="selectedFile" class="flex flex-col">
+          <div class="flex flex-col mb-4">
+            <label class="text-sm mb-2" style="color: var(--md-sys-color-on-surface-variant)">
+              Detaljnivå: {{ detailLevel }}
+            </label>
+            <input
+              type="range"
+              v-model="detailLevel"
+              min="1"
+              max="100"
+              step="1"
+              class="detail-slider"
+            />
+          </div>
+
+          <div class="flex flex-row">
+            <button @click="upload" class="w-min text-nowrap mr-3">Last opp</button>
+            <button @click="cancel" class="w-min secondary" style="color: var(--md-sys-color-on-surface)">Avbryt</button>
+          </div>
         </div>
       </div>
 
@@ -291,5 +311,49 @@ button {
     clip-path: circle(100% at center);
     transform: scale(1);
   }
+}
+
+.detail-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--md-sys-color-surface-container-high);
+  outline: none;
+  transition: background 0.15s;
+}
+
+.detail-slider:hover {
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.detail-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.detail-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.detail-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--md-sys-color-primary);
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s;
+}
+
+.detail-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
 }
 </style>
