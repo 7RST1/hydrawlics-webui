@@ -1,6 +1,10 @@
 import os
 import uuid
 import threading
+import csv
+import cv2
+import numpy as np
+import pandas as pd
 from CannyEdge import Canny_detector
 from polygonOutline import draw_polygon_outlines
 from datetime import datetime
@@ -30,6 +34,13 @@ jobs = {}
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg'}
 
+# Sort polygons by area (smallest to largest)
+def sort_polygons_by_area(contours, sort_by='area'):
+    if sort_by == 'area':
+        return sorted(contours, key=cv2.contourArea)
+    elif sort_by == 'perimeter':
+        return sorted(contours, key=cv2.arcLength)
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -40,8 +51,6 @@ def apply_edge_detection(input_path, output_path, job_id):
         jobs[job_id]['status'] = 'processing'
         jobs[job_id]['progress'] = 10
         sleep(1)
-
-        import cv2
 
         img = cv2.imread(input_path)
         if img is None:
@@ -55,10 +64,27 @@ def apply_edge_detection(input_path, output_path, job_id):
 
         jobs[job_id]['progress'] = 50
         sleep(1)
+
+        contours = [c for c in contours if cv2.contourArea(c) > 5.0]
+
+        slider = jobs[job_id].get('slider', None)
+
+        sorted_contours = sort_polygons_by_area(contours, sort_by='area')
+        if isinstance(slider, int) and 0 <= slider <= 50:
+            max_area = cv2.contourArea(sorted_contours[-1])
+            min_area = (slider / 100) * max_area  # filter threshold based on percentage
+            contours = [c for c in sorted_contours if cv2.contourArea(c) >= min_area]
         
         result = draw_polygon_outlines(img, contours)
         cv2.imwrite(output_path, result)
-       
+
+        areas = [cv2.contourArea(c) for c in sorted_contours]
+        print(f"[{job_id}] Smallest 10 areas: {areas[:10]}")
+        print(f"[{job_id}] Largest 10 areas: {areas[-10:]}")
+
+        for c in sorted_contours[:10]:
+            print(len(c), c.reshape(-1, 2)[:5])
+
         jobs[job_id]['progress'] = 80
         sleep(1)
         jobs[job_id]['progress'] = 100
@@ -114,11 +140,12 @@ def handle_upload():
         'created_at': datetime.now().isoformat(),
         'original_filename': filename,
         'input_path': input_path,
-        'output_path': output_path
+        'output_path': output_path,
+        'slider': int(request.form.get('slider', None))
     }
     
     # Start background processing, use a dummy image output for now
-    thread = threading.Thread(target=apply_edge_detection, args=(input_path, 'exampleout.jpg', job_id))
+    thread = threading.Thread(target=apply_edge_detection, args=(input_path, output_path, job_id))
     thread.daemon = True
     thread.start()
     
