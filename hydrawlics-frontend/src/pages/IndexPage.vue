@@ -81,11 +81,13 @@ const upload = async () => {
   if (!selectedFile.value) return;
 
   isUploading.value = true;
+  sitestage.value = 'uploading';
 
   const formData = new FormData();
   formData.append('file', selectedFile.value);
-  const polygonlider = ref<number>(50);
-  formData.append('slider', polygonlider.value.toString());
+  // send the actual slider value user set
+  formData.append('slider', detailLevel.value.toString());
+
   try {
     const response = await axios.post( SERVER_URL + '/upload', formData, {
       headers: {
