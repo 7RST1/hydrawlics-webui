@@ -81,9 +81,11 @@ const upload = async () => {
   if (!selectedFile.value) return;
 
   isUploading.value = true;
+  sitestage.value = 'uploading';
 
   const formData = new FormData();
   formData.append('file', selectedFile.value);
+  // send the actual slider value user set
   formData.append('slider', detailLevel.value.toString());
 
   try {

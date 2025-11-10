@@ -9,7 +9,6 @@ def draw_polygon_outlines(img, contours):
     img_copy = img.copy()
 
     for cnt in contours:
-        # area = cv2.contourArea(cnt)
         approx = cv2.approxPolyDP(cnt, 0.0005 * cv2.arcLength(cnt, True), True)
         cv2.drawContours(img_copy, [approx], 0, (255, 0, 255), 2)
 
