@@ -10,6 +10,7 @@ from polygonOutline import draw_polygon_outlines
 from datetime import datetime
 from time import sleep
 from io import BytesIO
+from gCode import path_to_gcode
 
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
@@ -46,9 +47,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def apply_edge_detection(input_path, output_path, job_id):
-    """TODO: Apply edge detection to image in background thread"""
+    """Apply edge detection to image in background thread and generate G-code"""
     try:
-        # do some arbitrary waiting to simulate processing
         jobs[job_id]['status'] = 'processing'
         jobs[job_id]['progress'] = 10
 
@@ -63,7 +63,6 @@ def apply_edge_detection(input_path, output_path, job_id):
 
         jobs[job_id]['progress'] = 50
 
-        # Keep all contours by default. Adjust MIN_CONTOUR_AREA if you want to drop tiny fragments.
         MIN_CONTOUR_AREA = 0.0
         contours = [c for c in contours if cv2.contourArea(c) > MIN_CONTOUR_AREA]
 
@@ -72,16 +71,32 @@ def apply_edge_detection(input_path, output_path, job_id):
         jobs[job_id]['contour_count'] = len(sorted_contours)
         
         result = draw_polygon_outlines(img, sorted_contours)
-        cv2.imwrite(output_path, result)
+        cv2.imwrite(output_path, result)     
 
-        areas = [cv2.contourArea(c) for c in sorted_contours]
-        print(f"[{job_id}] Smallest 10 areas: {areas[:10]}")
-        print(f"[{job_id}] Largest 10 areas: {areas[-10:]}")
+        jobs[job_id]['progress'] = 70
+        
+        # Generate G-code automatically
+        print(f"[{job_id}] Starting G-code generation...")
+        slider = jobs[job_id].get('slider', 100)
+        total = len(sorted_contours)
+        n = max(1, int(round(total * (slider / 100.0)))) if slider < 100 else total
+        contours_to_use = sorted_contours[-n:]
+        
+        print(f"[{job_id}] Total contours: {total}, Using: {n}")
+        
+        # Convert to paths format
+        paths = contours_to_paths(contours_to_use)
+        print(f"[{job_id}] Converted to {len(paths)} paths")
+        
+        # Always save to the same filename (overwrites previous)
+        gcode_path = os.path.join(os.path.dirname(__file__), 'output.gcode')  # Save in main folder
 
-        for c in sorted_contours[:10]:
-            print(len(c), c.reshape(-1, 2)[:5])
-
-        jobs[job_id]['progress'] = 80
+        path_to_gcode(gcode_path, paths, z_safe=100.0, z_cut=0.0, 
+                      feed_xy=1500, feed_z=3000)
+    
+        jobs[job_id]['gcode_path'] = gcode_path
+        jobs[job_id]['progress'] = 90
+        
         sleep(1)
         jobs[job_id]['progress'] = 100
         
@@ -93,6 +108,19 @@ def apply_edge_detection(input_path, output_path, job_id):
         jobs[job_id]['status'] = 'failed'
         jobs[job_id]['error'] = str(e)
         jobs[job_id]['completed_at'] = datetime.now().isoformat()
+        print(f"[{job_id}] ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
+
+# Convert OpenCV contours to the format expected by path_to_gcode
+def contours_to_paths(contours):
+    """Convert OpenCV contours to list of (x,y) tuples for G-code generation"""
+    paths = []
+    for contour in contours:
+        # contour shape is (N, 1, 2), reshape to (N, 2)
+        path = [(float(pt[0]), float(pt[1])) for pt in contour.reshape(-1, 2)]
+        paths.append(path)
+    return paths
 
 # sanity check route
 @app.route('/ping', methods=['GET'])
@@ -257,6 +285,52 @@ def download_result(job_id):
         job['result_path'],
         as_attachment=True,
         download_name=f"edges_{job['original_filename']}"
+    )
+
+@app.route('/jobs/<job_id>/gcode', methods=['GET'])
+def generate_gcode(job_id):
+    """Generate G-code from processed contours"""
+    if job_id not in jobs:
+        return jsonify({'error': 'Job not found'}), 404
+    
+    job = jobs[job_id]
+    if job.get('status') != 'completed':
+        return jsonify({'error': 'Job not completed yet'}), 400
+    
+    sorted_contours = job.get('sorted_contours')
+    if not sorted_contours:
+        return jsonify({'error': 'No contours found'}), 400
+    
+    # Get slider value to determine how many contours to include
+    slider = request.args.get('slider', type=int, default=job.get('slider', 100))
+    slider = max(1, min(100, int(slider)))
+    
+    total = len(sorted_contours)
+    n = max(1, int(round(total * (slider / 100.0)))) if slider < 100 else total
+    
+# Take largest N contours
+    contours_to_use = sorted_contours[-n:]
+    
+    # Convert contours to paths format
+    paths = contours_to_paths(contours_to_use)
+    
+    # Generate G-code file
+    gcode_filename = f"{job_id}_output.gcode"
+    gcode_path = os.path.join(app.config['PROCESSED_FOLDER'], gcode_filename)
+    
+    # Get optional parameters from query string
+    z_safe = request.args.get('z_safe', type=float, default=100.0)
+    z_cut = request.args.get('z_cut', type=float, default=0.0)
+    feed_xy = request.args.get('feed_xy', type=float, default=1500)
+    feed_z = request.args.get('feed_z', type=float, default=3000)
+    
+    path_to_gcode(gcode_path, paths, z_safe=z_safe, z_cut=z_cut, 
+                  feed_xy=feed_xy, feed_z=feed_z)
+    
+    return send_file(
+        gcode_path,
+        as_attachment=True,
+        download_name=f"contours_{job['original_filename']}.gcode"
     )
 
 @app.route('/jobs', methods=['GET'])
